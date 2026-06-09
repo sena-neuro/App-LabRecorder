@@ -84,9 +84,12 @@ Since it is too easy to forget to turn on or check all necessary recording devic
 
 If you check the box to EnableRCS then LabRecorder exposes some rudimentary controls via TCP socket.
 
+Currently supported command keywords are case-insensitive; command payloads such as stream predicates and filename options preserve their original text.
+
 Currently supported commands include:
 * `select all`
 * `select none`
+* `select <query>` - checks streams matching an LSL resolver predicate such as `name='BioSemi'`, `type='EEG'`, or `name='BioSemi' and hostname='LabPC1'`. If the text is not a valid predicate, LabRecorder also tries to match the visible list label, for example `BioSemi (LabPC1)`, or a case-insensitive substring of that label. This command adds matching streams to the current selection; send `select none` first if you want to record only the matching streams.
 * `start`
 * `stop`
 * `update`
@@ -108,7 +111,8 @@ For example, in Python:
 ```python
 import socket
 s = socket.create_connection(("localhost", 22345))
-s.sendall(b"select all\n")
+s.sendall(b"select none\n")
+s.sendall(b"select type='EEG'\n")
 s.sendall(b"filename {root:C:\\Data\\} {template:exp%n\\%p_block_%b.xdf} {run:2} {participant:P003} {task:MemoryGuided}\n")
 s.sendall(b"start\n")
 ```
@@ -116,7 +120,8 @@ s.sendall(b"start\n")
 ```Matlab
 lr = tcpip('localhost', 22345); 
 fopen(lr)
-fprintf(lr, 'select all');
+fprintf(lr, 'select none');
+fprintf(lr, 'select type=''EEG''');
 fprintf(lr, ['filename {root:C:\Data\} '...
             '{task:MemoryGuided} ' ...
             '{template:s_%p_%n.xdf ' ...

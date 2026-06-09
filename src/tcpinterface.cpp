@@ -17,23 +17,25 @@ void RemoteControlSocket::addClient() {
 
 void RemoteControlSocket::handleLine(QString s, QTcpSocket *sock) {
 	qInfo() << s;
-	if (s == "start")
+	const QString command = s.trimmed();
+	const QString lowerCommand = command.toLower();
+	if (lowerCommand == "start")
 		emit start();
-	else if (s == "stop")
+	else if (lowerCommand == "stop")
 		emit stop();
-	else if (s == "update")
-			emit refresh_streams();
-	else if (s.contains("filename")) {
-		emit filename(s);
-	} else if (s.contains("select")) {
-		if (s.contains("all")) {
-			emit select_all();
-		} else if (s.contains("none")) {
-			emit select_none();
-		}
+	else if (lowerCommand == "update")
+		emit refresh_streams();
+	else if (lowerCommand.startsWith("filename")) {
+		emit filename(command);
+	} else if (lowerCommand == "select all") {
+		emit select_all();
+	} else if (lowerCommand == "select none") {
+		emit select_none();
+	} else if (lowerCommand.startsWith("select ")) {
+		emit select_stream(command.mid(QStringLiteral("select ").size()).trimmed());
 	}
 	sock->write("OK");
-	// TODO: select /deselect streams
+	// TODO: support deselecting individual streams.
 	// TODO: send acknowledgement
 	// TODO: get current state
 	//

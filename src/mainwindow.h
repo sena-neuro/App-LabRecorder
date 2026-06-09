@@ -50,6 +50,7 @@ private slots:
 	void stopRecording(void);
 	void selectAllStreams();
 	void selectNoStreams();
+	void selectStreams(const QString &query);
 	void buildFilename();
 	void buildBidsTemplate();
 	void printReplacedFilename();

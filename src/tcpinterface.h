@@ -21,6 +21,7 @@ signals:
 	void filename(QString s);
 	void select_all();
 	void select_none();
+	void select_stream(QString query);
 
 public slots:
 	void addClient();

@@ -507,6 +507,30 @@ void MainWindow::selectNoStreams() {
 	}
 }
 
+void MainWindow::selectStreams(const QString &query) {
+	const std::vector<lsl::stream_info> resolvedStreams = refreshStreams();
+	QSet<QString> matchedNames;
+	const std::string queryString = query.toStdString();
+
+	for (const auto &stream : resolvedStreams) {
+		try {
+			if (stream.matches_query(queryString.c_str())) matchedNames.insert(info_to_listName(stream));
+		} catch (std::exception &e) {
+			qWarning() << "Invalid stream selection query" << query << ":" << e.what();
+			break;
+		}
+	}
+
+	for (int i = 0; i < ui->streamList->count(); i++) {
+		QListWidgetItem *item = ui->streamList->item(i);
+		const QString itemText = item->text();
+		if (matchedNames.contains(itemText) || itemText == query ||
+			itemText.contains(query, Qt::CaseInsensitive)) {
+			item->setCheckState(Qt::Checked);
+		}
+	}
+}
+
 void MainWindow::buildBidsTemplate() {
 	// path/to/CurrentStudy/sub-%p/ses-%s/eeg/sub-%p_ses-%s_task-%b[_acq-%a]_run-%r_eeg.xdf
 
@@ -647,6 +671,7 @@ void MainWindow::enableRcs(bool bEnable) {
 		connect(rcs.get(), &RemoteControlSocket::filename, this, &MainWindow::rcsUpdateFilename);
 		connect(rcs.get(), &RemoteControlSocket::select_all, this, &MainWindow::selectAllStreams);
 		connect(rcs.get(), &RemoteControlSocket::select_none, this, &MainWindow::selectNoStreams);
+		connect(rcs.get(), &RemoteControlSocket::select_stream, this, &MainWindow::selectStreams);
 	}
 	bool oldState = ui->rcsCheckBox->blockSignals(true);
 	ui->rcsCheckBox->setChecked(bEnable);
@@ -661,10 +686,10 @@ void MainWindow::rcsportValueChangedInt(int value) {
 }
 
 void MainWindow::rcsStartRecording() {
-	// since we want to avoid a pop-up window when streams are missing or unchecked,
-	// we'll check all the streams and start recording
+	// Remote start should record the current stream selection. Do not call
+	// selectAllStreams() here; doing so would override TCP `select <query>` commands.
+	// hideWarnings suppresses non-critical confirmation dialogs for remote control.
 	hideWarnings = true;
-	selectAllStreams();
 	startRecording();
 }
 
